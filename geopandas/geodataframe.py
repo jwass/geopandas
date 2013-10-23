@@ -4,7 +4,7 @@ import os
 
 import fiona
 import numpy as np
-from pandas import DataFrame
+from pandas import Series, DataFrame
 from shapely.geometry import mapping
 
 from geopandas import GeoSeries
@@ -54,6 +54,58 @@ class GeoDataFrame(DataFrame):
         return geopandas.io.sql.read_postgis(sql, con, geom_col, crs, index_col, 
                      coerce_float, params)
 
+
+    @classmethod
+    def from_rows(cls, df, f, drop_cols=None, crs=None):
+        """
+        Constructs a GeoDataFrame from a DataFrame whose rows can be
+        transformed to geometries by the input function
+
+        See also GeoSeries.from_rows
+
+        Parameters
+        ----------
+        df : DataFrame
+        f : function
+            Function called on each row. It must return a geometry
+        drop_cols : array-like
+            Column names to remove from returned GeoDataFrame
+        crs : dict, optional
+            crs for returned GeoDataFrame
+
+        Example:
+        >>> df
+          state   longitude   latitude  population             name
+        0    AK -164.645901  60.935052         399           Newtok
+        1    CA -122.544130  38.355205         549       Glen Ellen
+        2    FL  -82.355762  27.714416       20285  Sun City Center
+        3    ID -116.135316  47.519184         141          Wardner
+        4    LA  -92.121766  30.107116        1029          Maurice
+
+        >>> gdf = GeoDataFrame.from_points(df,
+                                           lambda x: Point(x['longitude'],
+                                                           x['latitude']),
+                                           ['longitude', 'latitude'])
+
+          state  population             name                         geometry
+        0    AK         399           Newtok  POINT (-164.6459... 60.9350...)
+        1    CA         549       Glen Ellen  POINT (-122.5441... 38.3552...)
+        2    FL       20285  Sun City Center   POINT (-82.3557... 27.7144...)
+        3    ID         141          Wardner  POINT (-116.1353... 47.5191...)
+        4    LA        1029          Maurice   POINT (-92.1217... 30.1071...)
+
+        """
+        if 'geometry' in df:
+            raise ValueError("DataFrame cannot contain a 'geometry' column")
+
+        geometry = GeoSeries.from_rows(df, f, crs=crs)
+
+        if drop_cols:
+            df = df.drop(drop_cols, axis=1)
+        df['geometry'] = geometry
+        df = GeoDataFrame(df, crs=crs)
+
+        return df
 
     def to_json(self, **kwargs):
         """Returns a GeoJSON representation of the GeoDataFrame.

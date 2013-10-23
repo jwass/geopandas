@@ -2,9 +2,10 @@ import os
 import shutil
 import tempfile
 import unittest
+import fiona
 import numpy as np
 from numpy.testing import assert_array_equal
-from pandas import Series
+from pandas import Series, DataFrame
 from shapely.geometry import Polygon, Point, LineString
 from shapely.geometry.base import BaseGeometry
 from geopandas import GeoSeries
@@ -291,3 +292,21 @@ class TestSeries(unittest.TestCase):
         self.assertEqual(self.landmarks.total_bounds, bbox)
         self.assertEqual(self.g1.total_bounds, (0, 0, 1, 1))
 
+    def test_from_rows(self):
+        df = DataFrame({'x': [self.sol.x, self.esb.x],
+                        'y': [self.sol.y, self.esb.y]}, index=['sol', 'esb'])
+
+        crs = fiona.crs.from_epsg(4326)
+        s = GeoSeries.from_rows(df, lambda x: Point(x['x'], x['y']), crs=crs)
+        self.assert_(type(s) == GeoSeries)
+
+        self.assertEqual(len(s), 2)
+        p = s['sol']
+        self.assertAlmostEqual(p.x, self.sol.x)
+        self.assertAlmostEqual(p.y, self.sol.y)
+
+        p = s['esb']
+        self.assertAlmostEqual(p.x, self.esb.x)
+        self.assertAlmostEqual(p.y, self.esb.y)
+
+        self.assertEqual(s.crs, crs)

@@ -4,7 +4,9 @@ import os
 import tempfile
 import shutil
 
+import fiona
 import numpy as np
+from pandas import DataFrame
 from shapely.geometry import Point, Polygon
 
 
@@ -108,3 +110,39 @@ class TestDataFrame(unittest.TestCase):
             con.close()
 
         tests.util.validate_boro_df(self, df)
+
+    def test_from_rows(self):
+        df = DataFrame({'x': [1.0, 2.0],
+                        'y': [3.0, 4.0],
+                        'randcol': ['random', 'strings']}, index=['a', 'b'])
+
+        crs = fiona.crs.from_epsg(4326)
+        gdf = GeoDataFrame.from_rows(df,
+                                       lambda x: Point(x['x'], x['y']),
+                                       drop_cols=['x', 'y'],
+                                       crs=crs)
+        self.assert_(type(gdf) == GeoDataFrame)
+
+        self.assertEqual(len(gdf), 2)
+        p = gdf['geometry']['a']
+        self.assertAlmostEqual(p.x, 1.0)
+        self.assertAlmostEqual(p.y, 3.0)
+        self.assertEqual(gdf['randcol']['a'], 'random')
+
+        p = gdf['geometry']['b']
+        self.assertAlmostEqual(p.x, 2.0)
+        self.assertAlmostEqual(p.y, 4.0)
+        self.assertEqual(gdf['randcol']['b'], 'strings')
+
+        self.assert_('x' not in gdf)
+        self.assert_('y' not in gdf)
+
+        self.assertEqual(gdf.crs, crs)
+
+    def test_from_rows_assert(self):
+        df = DataFrame({'x': [1.0, 2.0],
+                        'y': [3.0, 4.0],
+                        'geometry': ['random', 'strings']}, index=['a', 'b'])
+
+        with self.assertRaises(ValueError):
+            gdf = GeoDataFrame.from_rows(df, ['x', 'y'])

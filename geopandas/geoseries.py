@@ -72,6 +72,47 @@ class GeoSeries(Series):
         g.crs = crs
         return g
 
+    @classmethod
+    def from_rows(cls, df, f, crs=None):
+        """
+        Constructs a GeoSeries from a DataFrame whose rows can be
+        transformed to geometries by the input function
+
+        Parameters
+        ----------
+        df : DataFrame
+        f : function
+            Function called on each row. It must return a geometry
+        crs : dict, optional
+            crs for returned GeoDataFrame
+
+        Example:
+        >>> df
+          state   longitude   latitude  population             name
+        0    AK -164.645901  60.935052         399           Newtok
+        1    CA -122.544130  38.355205         549       Glen Ellen
+        2    FL  -82.355762  27.714416       20285  Sun City Center
+        3    ID -116.135316  47.519184         141          Wardner
+        4    LA  -92.121766  30.107116        1029          Maurice
+
+        >>> s = GeoSeries.from_points(df, lambda x: Point(x['longitude'],
+                                                          x['latitude']))
+        0   POINT (-164.6459... 60.9350...)
+        1   POINT (-122.5441... 38.3552...)
+        2    POINT (-82.3557... 27.7144...)
+        3   POINT (-116.1353... 47.5191...)
+        4    POINT (-92.1217... 30.1071...)
+        dtype: object
+
+        """
+        geomdict = {}
+        for index, s in df.iterrows():
+            geomdict[index] = f(s)
+
+        geometry = GeoSeries(geomdict, crs=crs)
+
+        return geometry
+
     def to_file(self, filename, driver="ESRI Shapefile", **kwargs):
         from geopandas import GeoDataFrame
         data = GeoDataFrame({"geometry": self,
