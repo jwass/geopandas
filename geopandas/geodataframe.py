@@ -10,6 +10,7 @@ from shapely.geometry import mapping
 from geopandas import GeoSeries
 from geopandas.plotting import plot_dataframe
 import geopandas.io
+from geopandas.io import geojsonio
 
 
 class GeoDataFrame(DataFrame):
@@ -279,3 +280,35 @@ class GeoDataFrame(DataFrame):
 
     def plot(self, *args, **kwargs):
         return plot_dataframe(self, *args, **kwargs)
+
+    def to_geojsonio(self, *args, **kwargs):
+        """
+        Opens a web browser and displays the contents on http://geojson.io. If
+        the contents are large, an anonymous gist will be created on Github.
+
+        If the GeoDataFrame has no crs, the data will assumed to be EPSG 4326.
+        Otherwise it will converted before sending to geojson.io.
+
+        Parameters
+        ----------
+        gist : boolean, default True
+            If the GeoJSON contents are too large to be embedded in the URL,
+            this indicates whether a Github gist should be created.
+        domain : string, default 'http://geojson.io/'
+            The domain to use. Most likely run on localhost if not using the
+            default option
+
+        Returns
+        -------
+        url : str
+            The geojson.io URL used to open the web browser. The URL can be
+            re-used.
+
+        """
+        crs = fiona.crs.from_epsg(4326)
+        df = self
+        if df.crs is not None and df.crs != crs:
+            df = df.to_crs(crs)
+
+        contents = df.to_json()
+        return geojsonio.to_geojsonio(contents, *args, **kwargs)
