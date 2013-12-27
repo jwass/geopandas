@@ -1,5 +1,4 @@
 import string
-import unittest
 
 import numpy as np
 from numpy.testing import assert_array_equal
@@ -10,7 +9,9 @@ from shapely.geometry.collection import GeometryCollection
 
 from geopandas import GeoSeries, GeoDataFrame
 from geopandas.base import GeoPandasBase
-from tests.util import geom_equals, geom_almost_equals, assert_geoseries_equal
+from util import (
+    unittest, geom_equals, geom_almost_equals, assert_geoseries_equal
+)
 
 class TestGeomMethods(unittest.TestCase):
 
