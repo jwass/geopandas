@@ -5,3 +5,4 @@ matplotlib>=1.2.1
 descartes>=1.0
 pytest-cov
 coveralls
+git+git://github.com/toblerity/rtree.git@74a97ed1b80ba8c3a2284e42a555aa0c0a3f911f
