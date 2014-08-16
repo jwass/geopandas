@@ -13,6 +13,7 @@ env:
   - PANDAS_VERSION=master
 
 before_install:
+  - sudo rm /etc/apt/sources.list.d/ubuntugis-stable-source.list
   - sudo add-apt-repository -y ppa:ubuntugis/ppa
   - sudo apt-get update
   - sudo apt-get install gdal-bin libgdal-dev libspatialindex-dev libspatialindex1
