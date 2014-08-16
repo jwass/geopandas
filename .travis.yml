@@ -14,15 +14,12 @@ env:
 
 before_install:
   - sudo mv /etc/apt/sources.list.d/pgdg-source.list* /tmp
-  - sudo apt-get -qq purge postgis postgresql
   - sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
   - sudo apt-get update -qq
-  #- sudo rm /etc/apt/sources.list.d/ubuntugis-stable-source.list
-  #- sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
-  - sudo apt-get install gdal-bin libgdal1-dev libspatialindex-dev libspatialindex1 libgdal1h postgis postgresql-9.1-postgis-2.1-scripts libpq-dev
-  - sudo -u postgres psql -c "drop database if exists test_geopandas"
-  - sudo -u postgres psql -c "create database test_geopandas"
-  - sudo -u postgres psql -c "create extension postgis" -d test_geopandas
+  - sudo apt-get install gdal-bin libgdal1-dev libspatialindex-dev libspatialindex1 libgdal1h
+  # - sudo -u postgres psql -c "drop database if exists test_geopandas"
+  # - sudo -u postgres psql -c "create database test_geopandas"
+  # - sudo -u postgres psql -c "create extension postgis" -d test_geopandas
 
 install:
   - pip install -r requirements.txt --use-mirrors
