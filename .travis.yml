@@ -16,7 +16,7 @@ before_install:
   - sudo rm /etc/apt/sources.list.d/ubuntugis-stable-source.list
   #- sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
   - sudo apt-get update
-  - sudo apt-get install gdal-bin libgdal-dev libspatialindex-dev libspatialindex1 libspatialite-dev libspatialite3
+  - sudo apt-get install gdal-bin libgdal-dev libgdal1 libspatialindex-dev libspatialindex1 libspatialite-dev libspatialite3
 #  - sudo -u postgres psql -c "drop database if exists test_geopandas"
 #  - sudo -u postgres psql -c "create database test_geopandas"
 #  - sudo -u postgres psql -c "create extension postgis" -d test_geopandas
