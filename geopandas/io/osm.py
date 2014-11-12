@@ -258,7 +258,7 @@ def render_to_gdf(osmdata, drop_untagged=True):
     # Group the ways and create a LineString for each one.  way_lines is a
     # Series where the index is the way id and the value is the LineString.
     # Merge it with the waytags to get a single GeoDataFrame of ways
-    if not osmdata.waynodes.empty:
+    if not waynodes.empty:
         waynodes = waynodes.merge(node_points, left_on='ref', right_on='id',
                                   suffixes=('', '_nodes'))
         way_lines = waynodes.groupby('id').apply(wayline)
