@@ -148,21 +148,52 @@ def read_osm(content, render=True, **kwargs):
     """
     doc = ET.fromstring(content)
 
+    nodes = read_nodes(doc)
+    waynodes, waytags = read_ways(doc)
+    relmembers, reltags = read_relations(doc)
+
+    data = OSMData(nodes, waynodes, waytags, relmembers, reltags)
+    
+    if render:
+        data = render_to_gdf(data, **kwargs)
+
+    return data
+
+
+def read_nodes(doc):
     #   Example:
     #   <node id="1705717514" lat="42.3630798" lon="-71.0997601">
     #       <tag k="crossing" v="zebra"/>
     #       <tag k="highway" v="crossing"/>
     #       <tag k="source" v="Bing"/>
     #   </node>
-    nodes = []
-    for xmlnode in doc.findall('node'):
-        node = xmlnode.attrib.copy()
-        for t in xmlnode.findall('tag'):
-            k = t.attrib['k']
-            if k not in uninteresting_tags:
-                node[k] = t.attrib['v']
-        nodes.append(node)
+    nodes = [_element_to_dict(xmlnode) for xmlnode in doc.findall('node')]
+    nodes = _dict_to_dataframe(nodes)
+    nodes['lon'] = nodes['lon'].astype(float)
+    nodes['lat'] = nodes['lat'].astype(float)
 
+    return nodes
+
+
+def _element_to_dict(element):
+    d = element.attrib.copy()
+    for t in element.findall('tag'):
+        k = t.attrib['k']
+        if k not in uninteresting_tags:
+            d[k] = t.attrib['v']
+    
+    return d
+
+
+def _dict_to_dataframe(d):
+    df = pd.DataFrame.from_dict(d)
+    if 'timestamp' in df:
+        df['timestamp'] = pd.to_datetime(df['timestamp'])
+
+    return df
+
+
+def read_ways(doc):
     #   Example:
     #   <way id="8614593">
     #       <nd ref="61326730"/>
@@ -188,13 +219,16 @@ def read_osm(content, render=True, **kwargs):
             d['index'] = i
             waynodes.append(d)
 
-        tags = xmlway.attrib.copy()
-        for t in xmlway.findall('tag'):
-            k = t.attrib['k']
-            if k not in uninteresting_tags:
-                tags[k] = t.attrib['v']
+        tags = _element_to_dict(xmlway)
         waytags.append(tags)
 
+    waynodes = _dict_to_dataframe(waynodes)
+    waytags = _dict_to_dataframe(waytags)
+
+    return waynodes, waytags
+
+
+def read_relations(doc):
     # Example:
     #   <relation id="1933745">
     #     <member type="way" ref="134055159" role="outer"/>
@@ -220,30 +254,13 @@ def read_osm(content, render=True, **kwargs):
             d['index'] = i
             relmembers.append(d)
 
-        tags = xmlrel.attrib.copy()
-        for t in xmlrel.findall('tag'):
-            k = t.attrib['k']
-            if k not in uninteresting_tags:
-                tags[k] = t.attrib['v']
+        tags = _element_to_dict(xmlrel)
         reltags.append(tags)
 
-    data = OSMData(*(pd.DataFrame.from_dict(x)
-                     for x in (nodes, waynodes, waytags, relmembers, reltags)))
-    
-    # Put some columns in the right format. Return 'lon', 'lat' in nodes
-    # as floats. If meta is set to True, then convert the 'timestamp'
-    # field to a datetime64 so we can do all the fancy Pandas datetime
-    # operations
-    data.nodes['lon'] = data.nodes['lon'].astype(float)
-    data.nodes['lat'] = data.nodes['lat'].astype(float)
-    for df in data:
-        if 'timestamp' in df:
-            df['timestamp'] = pd.to_datetime(df['timestamp'])
+    relmembers = _dict_to_dataframe(relmembers)
+    reltags = _dict_to_dataframe(reltags)
 
-    if render:
-        data = render_to_gdf(data, **kwargs)
-
-    return data
+    return relmembers, reltags
 
 
 def render_to_gdf(osmdata, drop_untagged=True):
