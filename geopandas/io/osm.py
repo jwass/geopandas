@@ -9,6 +9,7 @@ from six import string_types
 
 OSMData = collections.namedtuple('OSMData', ('nodes', 'waynodes', 'waytags',
                                              'relmembers', 'reltags'))
+_crs = fiona.crs.from_epsg(4326)
 
 # Tags to remove so we don't clobber the output. This list comes from
 # osmtogeojson's index.js (https://github.com/tyrasd/osmtogeojson)
@@ -246,8 +247,31 @@ def read_osm(content, render=True, **kwargs):
 
 
 def render_to_gdf(osmdata, drop_untagged=True):
-    nodes, waynodes, waytags, relmembers, reltags = osmdata
-    crs = fiona.crs.from_epsg(4326)
+    nodes = render_nodes(osmdata.nodes, drop_untagged)
+
+    ways = render_ways(osmdata.nodes, osmdata.waynodes, osmdata.waytags)
+    if ways is not None:
+        # We should get append working
+        nodes = nodes.append(ways).set_geometry('geometry', crs=_crs)
+
+    return nodes
+
+
+def render_nodes(nodes, drop_untagged=True):
+    # Drop nodes that have no tags, convert lon/lat to points
+    if drop_untagged:
+        nodes = nodes.dropna(subset=nodes.columns.drop(['id', 'lon', 'lat']),
+                             how='all')
+    points = [Point(x['lon'], x['lat']) for i, x in nodes.iterrows()]
+    nodes = nodes.drop(['lon', 'lat'], axis=1)
+    nodes = nodes.set_geometry(points, crs=_crs)
+
+    return nodes
+
+
+def render_ways(nodes, waynodes, waytags):
+    if waynodes is None or waynodes.empty:
+        return None
 
     node_points = nodes[['id', 'lon', 'lat']]
 
@@ -258,25 +282,10 @@ def render_to_gdf(osmdata, drop_untagged=True):
     # Group the ways and create a LineString for each one.  way_lines is a
     # Series where the index is the way id and the value is the LineString.
     # Merge it with the waytags to get a single GeoDataFrame of ways
-    if not waynodes.empty:
-        waynodes = waynodes.merge(node_points, left_on='ref', right_on='id',
-                                  suffixes=('', '_nodes'))
-        way_lines = waynodes.groupby('id').apply(wayline)
-        ways = waytags.set_index('id').set_geometry(way_lines, crs=crs)
-        ways.reset_index(inplace=True)
-    else:
-        ways = None
+    waynodes = waynodes.merge(node_points, left_on='ref', right_on='id',
+                              suffixes=('', '_nodes'))
+    way_lines = waynodes.groupby('id').apply(wayline)
+    ways = waytags.set_index('id').set_geometry(way_lines, crs=_crs)
+    ways.reset_index(inplace=True)
 
-    # Drop nodes that have no tags, convert lon/lat to points
-    if drop_untagged:
-        nodes = nodes.dropna(subset=nodes.columns.drop(['id', 'lon', 'lat']),
-                             how='all')
-    points = [Point(x['lon'], x['lat']) for i, x in nodes.iterrows()]
-    nodes.drop(['lon', 'lat'], axis=1, inplace=True)
-    nodes = nodes.set_geometry(points, crs=crs)
-
-    if ways is not None:
-        # We should get append working
-        nodes = nodes.append(ways).set_geometry('geometry', crs=crs)
-
-    return nodes
+    return ways
