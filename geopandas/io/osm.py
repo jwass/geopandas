@@ -188,7 +188,7 @@ def read_osm(content, render=True, **kwargs):
             d['index'] = i
             waynodes.append(d)
 
-        tags = {'id': wayid}
+        tags = xmlway.attrib.copy()
         for t in xmlway.findall('tag'):
             k = t.attrib['k']
             if k not in uninteresting_tags:
@@ -220,7 +220,7 @@ def read_osm(content, render=True, **kwargs):
             d['index'] = i
             relmembers.append(d)
 
-        tags = {'id': relid}
+        tags = xmlrel.attrib.copy()
         for t in xmlrel.findall('tag'):
             k = t.attrib['k']
             if k not in uninteresting_tags:
