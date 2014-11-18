@@ -213,6 +213,15 @@ class TestDataFrame(unittest.TestCase):
             self.assertAlmostEqual(i, r['geometry'].x)
             self.assertAlmostEqual(i, r['geometry'].y)
 
+    def test_set_geometry_zero_ndim(self):
+        # Make sure we can call set_geometry() on a numpy array
+        # that has ndim set to 0 - a numpy.int64 for example where
+        # that value matches a column name
+        df = pd.DataFrame({0: self.df2['geometry'],
+                           'value1': self.df2['value1']})
+        result = df.set_geometry(np.int64(0), crs=self.df2.crs)
+        assert_geoseries_equal(self.df2['geometry'], result.geometry)
+
     def test_to_json(self):
         text = self.df.to_json()
         data = json.loads(text)

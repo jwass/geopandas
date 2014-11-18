@@ -115,7 +115,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geo_column_name = DEFAULT_GEO_COLUMN_NAME
         if isinstance(col, (Series, list, np.ndarray)):
             level = col
-        elif hasattr(col, 'ndim') and col.ndim != 1:
+        elif hasattr(col, 'ndim') and col.ndim > 1:
             raise ValueError("Must pass array with one dimension only.")
         else:
             try:
