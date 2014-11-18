@@ -154,6 +154,12 @@ class GeoSeries(GeoPandasBase, Series):
     def select(self, *args, **kwargs):
         return self._wrapped_pandas_method('select', *args, **kwargs)
 
+    def to_frame(self, *args, **kwargs):
+        df = super(GeoSeries, self).to_frame(*args, **kwargs)
+        df = df.set_geometry(df.columns[0])
+
+        return df
+
     @property
     def _can_hold_na(self):
         return False

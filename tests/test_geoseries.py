@@ -9,8 +9,9 @@ from pandas import Series
 from shapely.geometry import (Polygon, Point, LineString,
                               MultiPoint, MultiLineString, MultiPolygon)
 from shapely.geometry.base import BaseGeometry
-from geopandas import GeoSeries
-from .util import unittest, geom_equals, geom_almost_equals
+from geopandas import GeoSeries, GeoDataFrame
+from .util import (unittest, geom_equals, geom_almost_equals,
+    assert_geoseries_equal)
 
 
 class TestSeries(unittest.TestCase):
@@ -115,6 +116,22 @@ class TestSeries(unittest.TestCase):
         s = GeoSeries.from_file(tempfilename)
         self.assertTrue(all(self.g3.geom_equals(s)))
         # TODO: compare crs
+
+    def test_to_frame_no_name(self):
+        self.g1.name = None
+        result = self.g1.to_frame()
+
+        self.assert_(isinstance(result, GeoDataFrame))
+        self.assert_(len(result.columns) == 1)
+        self.assert_(result.columns[0] == 0)
+
+    def test_to_frame_name(self):
+        self.g1.name = 'test_geom_col'
+        result = self.g1.to_frame()
+
+        self.assert_(isinstance(result, GeoDataFrame))
+        self.assertEqual(len(result.columns), 1)
+        self.assertEqual(result.columns[0], 'test_geom_col')
 
     def test_representative_point(self):
         self.assertTrue(np.alltrue(self.g1.contains(self.g1.representative_point())))
