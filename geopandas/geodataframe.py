@@ -12,7 +12,7 @@ import numpy as np
 from pandas import DataFrame, Series
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
-from six import string_types, iteritems
+from six import iteritems
 
 from geopandas import GeoSeries
 from geopandas.base import GeoPandasBase
@@ -372,7 +372,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """
         result = super(GeoDataFrame, self).__getitem__(key)
         geo_col = self._geometry_column_name
-        if isinstance(key, string_types) and key == geo_col:
+        if isinstance(result, Series) and key == geo_col:
             result.__class__ = GeoSeries
             result.crs = self.crs
             result._invalidate_sindex()

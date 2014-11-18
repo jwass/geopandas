@@ -62,6 +62,14 @@ class TestDataFrame(unittest.TestCase):
         assert_geoseries_equal(df2['location'], df['location'],
                                   check_series_type=False, check_dtype=False)
 
+    def test_non_string_geo_colname_geoseries(self):
+        data = {"A": range(5), "B": range(-5, 0),
+                0: [Point(x, y) for x, y in zip(range(5), range(5))]}
+        df = GeoDataFrame(data, crs=self.crs, geometry=0)
+        gs = df[0]
+
+        self.assert_(isinstance(gs, GeoSeries))
+
     def test_geo_getitem(self):
         data = {"A": range(5), "B": range(-5, 0),
                 "location": [Point(x, y) for x, y in zip(range(5), range(5))]}
